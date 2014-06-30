@@ -28,11 +28,7 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view from its nib.
 }
-- (IBAction)onremberPwd:(id)sender {
-    [NSUD setBool:YES forKey:@"remberPwd"];
-    [NSUD synchronize];
-    
-}
+
 - (IBAction)onLogin:(id)sender {
     [appDelegate.sinaWeibo logIn];
 }

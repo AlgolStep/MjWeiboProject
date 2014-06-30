@@ -11,4 +11,5 @@
 @interface MjEditViewController : UIViewController<UITextViewDelegate,UINavigationControllerDelegate,UIImagePickerControllerDelegate,UIActionSheetDelegate>
 @property (nonatomic, assign)BOOL isTextEdited;
 @property (nonatomic, assign)BOOL isKeyBoardToolShow;
+@property (nonatomic, retain)NSDictionary *mDicStatus;
 @end

@@ -10,7 +10,8 @@
 
 @interface MjHomeViewController : UITableViewController<SinaWeiboRequestDelegate>
 
-@property (nonatomic,copy)NSArray *statusDataList;
+@property (nonatomic, copy)NSArray *statusDataList;
+@property (nonatomic, copy)NSArray *userDataList;
 @property (nonatomic, retain) NSDictionary *currentUserInfo;
 @property (nonatomic, assign)BOOL *isSendedContent;
 @end

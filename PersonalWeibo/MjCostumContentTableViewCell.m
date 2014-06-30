@@ -10,6 +10,7 @@
 #import "XMLDictionary.h"
 #import "UIImageView+WebCache.h"
 #import "NSString+FrameHeight.h"
+#import "MjRichTextView.h"
 
 
 @implementation MjCostumContentTableViewCell
@@ -44,9 +45,9 @@
         [self.contentView addSubview:_labelChannel];
         
         //        微博正文
-        _labelStatus = [[UILabel alloc] initWithFrame:CGRectZero];
+        _labelStatus = [[MjRichTextView alloc] initWithFrame:CGRectZero];
         _labelStatus.font = [UIFont systemFontOfSize:fontSize];
-        _labelStatus.numberOfLines = 0;
+//        _labelStatus.numberOfLines = 0;
        
         [self.contentView addSubview:_labelStatus];
         
@@ -85,23 +86,26 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
+    
     [self reLoadViewFrame];
-    NSDictionary *dicUserInfo = [self.cellData objectForKey:@"user"];
+    
+    NSDictionary *dicUserInfo = [self.cellData objectForKey:kStatusUserInfo];
     NSDictionary *statusInfo = self.cellData;
     NSUInteger widthSpace = 5;
     CGFloat fontSize = 14.0f;
 
     //    好友微博的头像
-    NSURL *imgURL = [NSURL URLWithString:[dicUserInfo objectForKey:@"profile_image_url"]];
-    [self.avatarImageView setImageWithURL:imgURL];
+    NSString *strUrl = [dicUserInfo objectForKey:kUserAvatarLarge];
+    [self.avatarImageView setImageWithURL:[NSURL URLWithString:strUrl]];
+
     
     //    微博用户名称
     self.labelScreenName.frame = CGRectMake(CGRectGetMaxX(self.avatarImageView.frame)+widthSpace, 2, 100, 20);
-    self.labelScreenName.text = [dicUserInfo objectForKey:@"screen_name"];
+    self.labelScreenName.text = [dicUserInfo objectForKey:kUserInfoScreenName];
     
     //    微博创建时间
     self.labelCreateTime.frame = CGRectMake(CGRectGetMaxX(self.avatarImageView.frame)+widthSpace,CGRectGetHeight(_labelScreenName.frame)+ 2,150,20);
-    NSString *strDate = [statusInfo objectForKey:@"created_at"];
+    NSString *strDate = [statusInfo objectForKey:kStatusCreateTime];
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"EEE MMM dd HH:mm:ss ZZZ yyyy"];
     NSDate *dateFromString = [dateFormatter dateFromString:strDate];
@@ -114,14 +118,16 @@
     
     //    微博来源
     self.labelChannel.frame = CGRectMake(CGRectGetMaxX(self.labelCreateTime.frame), CGRectGetHeight(_labelScreenName.frame)+2, 150, 20);
-    NSString *xmlSourceString = [statusInfo objectForKey:@"source"];
+    NSString *xmlSourceString = [statusInfo objectForKey:kStatusSource];
     NSDictionary *dicSource = [NSDictionary  dictionaryWithXMLString:xmlSourceString];
     self.labelChannel.text = [dicSource objectForKey:@"__text"];
     
     //    微博正文
-    NSString *statusText = [statusInfo objectForKey:@"text"];
+    NSString *statusText = [statusInfo objectForKey:kStatusText];
+    self.labelStatus.backgroundColor = [UIColor clearColor];
     self.labelStatus.text = statusText;
-    CGRect newFrame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelChannel.frame)+widthSpace, 310, [statusText initHeightWithFontSize:fontSize forViewWidth:310.f]);
+    self.labelStatus.delegage = self;
+    CGRect newFrame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelChannel.frame)+widthSpace, 310, [statusText initHeightWithFontSize:fontSize forViewWidth:310.f]+10);
     self.labelStatus.frame = newFrame;
     
     for (UIView *retView in [self.retStImageViewBg subviews]) {
@@ -135,17 +141,17 @@
     
     NSUInteger statusImageWidth = 80.0f;
     NSUInteger statusImageHeight = 80.0f;
-    NSDictionary *retweetStatusInfo = [self.cellData objectForKey:@"retweeted_status"];
+    NSDictionary *retweetStatusInfo = [self.cellData objectForKey:kStatusRetweetStatus];
     //  当这条微博是一条转发微博
     if (retweetStatusInfo != nil) {
         //    转发微博正文
-        NSString *statusText = [retweetStatusInfo objectForKey:@"text"];
+        NSString *statusText = [retweetStatusInfo objectForKey:kStatusText];
         self.labelRetweetStatus.text = statusText;
-        CGRect newFrame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelStatus.frame)+widthSpace, 310, [statusText initHeightWithFontSize:fontSize forViewWidth:310.f]);
+        CGRect newFrame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelStatus.frame), 310, [statusText initHeightWithFontSize:fontSize forViewWidth:310.f]);
         self.labelRetweetStatus.frame = newFrame;
         
         //   转发微博正文附带图片
-        NSArray *retStatusPicUrls = [retweetStatusInfo objectForKey:@"pic_urls"];
+        NSArray *retStatusPicUrls = [retweetStatusInfo objectForKey:kStatusPicUrls];
         if (retStatusPicUrls.count > 1) {
             self.retStImageViewBg.frame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelRetweetStatus.frame), 310, statusImageWidth * ceilf(retStatusPicUrls.count /3.0f));
             for (int i = 0 ; i < retStatusPicUrls.count; i++) {
@@ -163,16 +169,18 @@
                 if (stImgView.userInteractionEnabled) {
                         [stImgView addGestureRecognizer:tapGesture];
                 }
-                
-                
-                NSString *strPicUrls = [retStatusPicUrls[i] objectForKey:@"thumbnail_pic"];
+//               这里可以用多线程进行改进
+//                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+//                    
+//                });
+                NSString *strPicUrls = [retStatusPicUrls[i] objectForKey:kStatusThumbnailPic];
                 [stImgView setImageWithURL:[NSURL URLWithString:strPicUrls]];
                 [self.retStImageViewBg addSubview:stImgView];
             }
         }else if (retStatusPicUrls.count == 1)
         {
             
-            NSString *strPicUrls = [retStatusPicUrls[0] objectForKey:@"thumbnail_pic"];
+            NSString *strPicUrls = [retStatusPicUrls[0] objectForKey:kStatusThumbnailPic];
             UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:strPicUrls]]];
             
             UIImageView *stImgView = [[UIImageView alloc] initWithFrame:CGRectMake(5, 5, image.size.width, image.size.height)];
@@ -184,14 +192,12 @@
             [self.retStImageViewBg addSubview:stImgView];
             self.retStImageViewBg.frame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelRetweetStatus.frame), image.size.width, image.size.height);
         }
-        
-        
     }else
     {
         //   微博正文附带图片
-        NSArray *statusPicUrls = [statusInfo objectForKey:@"pic_urls"];
+        NSArray *statusPicUrls = [statusInfo objectForKey:kStatusPicUrls];
         if (statusPicUrls.count > 1) {
-            self.stImageViewBg.frame = CGRectMake(0, CGRectGetMaxY(self.labelStatus.frame), 310, 80 * ceilf(statusPicUrls.count /3.0f));
+            self.stImageViewBg.frame = CGRectMake(0, CGRectGetMaxY(self.labelStatus.frame)+widthSpace, 310, 80 * ceilf(statusPicUrls.count /3.0f));
             for (int i = 0 ; i < statusPicUrls.count; i++) {
                 UIImageView *stImgView = nil;
                 if (statusPicUrls.count == 4) {
@@ -201,17 +207,15 @@
                     stImgView = [[UIImageView alloc] initWithFrame:CGRectMake(5+statusImageWidth*(i%3), statusImageHeight*ceil(i/3), statusImageWidth, statusImageHeight)];
                 }
                 
-                NSString *strPicUrls = [statusPicUrls[i] objectForKey:@"thumbnail_pic"];
+                NSString *strPicUrls = [statusPicUrls[i] objectForKey:kStatusThumbnailPic];
                 [stImgView setImageWithURL:[NSURL URLWithString:strPicUrls]];
                 [self.stImageViewBg addSubview:stImgView];
             }
         }else if (statusPicUrls.count == 1)
         {
-            
-            NSString *strPicUrls = [statusPicUrls[0] objectForKey:@"thumbnail_pic"];
+            NSString *strPicUrls = [statusPicUrls[0] objectForKey:kStatusThumbnailPic];
             UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:strPicUrls]]];
             UIImageView *stImgView = [[UIImageView alloc] initWithFrame:CGRectMake(5, 5, image.size.width, image.size.height)];
-            NSLog(@"%@",strPicUrls);
             [stImgView setImage:image];
             [self.stImageViewBg addSubview:stImgView];
             self.stImageViewBg.frame = CGRectMake(widthSpace, CGRectGetMaxY(self.labelStatus.frame), image.size.width, image.size.height);
@@ -233,11 +237,32 @@
     }
 }
 
-//- (void)dealloc
+- (void)richTextView:(MjRichTextView *)view touchBeginRun:(TQRichTextBaseRun *)run
+{
+
+}
+
+- (void)richTextView:(MjRichTextView *)view touchEndRun:(TQRichTextBaseRun *)run
+{
+    if (run.type == richTextURLRunType)
+    {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:run.originalText]];
+    }
+}
+
+//- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 //{
-//    
-//   
-//    [super dealloc];
+//    self.labelStatus.text = @"123";
 //}
+
+
+- (void)dealloc
+{
+    
+    [self.labelScreenName release];
+    [self.labelChannel release];
+    [self.labelCreateTime release];
+    [super dealloc];
+}
 
 @end

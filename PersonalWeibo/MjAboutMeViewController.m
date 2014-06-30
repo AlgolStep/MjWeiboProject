@@ -164,7 +164,6 @@ enum AboutMeSection{
 - (void)onWriteBtn:(UIButton *)writeBtn
 {
     MjEditViewController *editViewController = [[MjEditViewController alloc]init];
-//    [self.navigationController pushViewController:editViewController animated:YES];
     [self presentViewController:editViewController animated:YES completion:nil];
     self.tabBarController.tabBar.hidden = YES;
     [editViewController release];
@@ -349,7 +348,7 @@ static CGFloat fontSize = 14.0f;
         
         
     }
-    return (height4Header + statusTextHeight + statusImageViewHeight + retweetStatusTextHeight + 40);
+    return (height4Header + statusTextHeight + statusImageViewHeight + retweetStatusTextHeight + 50);
 
 }
 
@@ -359,39 +358,50 @@ static CGFloat fontSize = 14.0f;
         UIView *footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 35.0f)];
         footerView.layer.borderColor = [UIColor lightGrayColor].CGColor;
         footerView.layer.borderWidth = 0.5f;
-        footerView.backgroundColor = [UIColor whiteColor];
         
-        NSDictionary *currrentStatusInfo = self.userTimeLines[0];
-        UIButton *retsweetBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, 2.5, 90, 30)];
-        [retsweetBtn setImage:[UIImage imageNamed:@"timeline_icon_retweet_os7"] forState:UIControlStateNormal];
-        NSString *retweetButtonTitle =[NSString stringWithFormat:@"%@",[currrentStatusInfo objectForKey:kStatusRepostsCount]];
+        UIButton *retsweetBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, 2.5, 100, 30)];
+        [retsweetBtn setImage:[UIImage imageNamed:@"timeline_icon_retweet"] forState:UIControlStateNormal];
+        [retsweetBtn setImage:[UIImage imageNamed:@"timeline_icon_retweet"] forState:UIControlStateHighlighted];
+        NSString *retweetButtonTitle =[NSString stringWithFormat:@"%@",[self.statusDataList[section]
+                                                                        objectForKey:kStatusRepostsCount]];
         [retsweetBtn setTitle: retweetButtonTitle forState:UIControlStateNormal];
+        [retsweetBtn setTitle:retweetButtonTitle forState:UIControlStateHighlighted];
         [retsweetBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 20, 0, 50)];
         [retsweetBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, 15, 0, 20)];
         retsweetBtn.titleLabel.font = [UIFont systemFontOfSize:13.0f];
-        retsweetBtn.titleLabel.textColor = [UIColor darkGrayColor];
+        [retsweetBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+        [retsweetBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
+//        [retsweetBtn addTarget:self action:@selector(onRetsweetBtn:) forControlEvents:UIControlEventTouchUpInside];
         retsweetBtn.tag = section;
-        [retsweetBtn addTarget:self action:@selector(onRetweetButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [footerView addSubview:retsweetBtn];
         
-        UIButton *commentBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(retsweetBtn.frame)+10, 2.5, 90, 30)];
-        [commentBtn setImage:[UIImage imageNamed:@"timeline_icon_comment_os7"] forState:UIControlStateNormal];
-        NSString *commentButtonTitle =[NSString stringWithFormat:@"%@",[currrentStatusInfo objectForKey:kStatusCommentsCount]];
+        UIButton *commentBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(retsweetBtn.frame)+10, 2.5, 100, 30)];
+        [commentBtn setImage:[UIImage imageNamed:@"timeline_icon_comment"] forState:UIControlStateNormal];
+        [commentBtn setImage:[UIImage imageNamed:@"timeline_icon_comment"] forState:UIControlStateHighlighted];
+        NSString *commentButtonTitle =[NSString stringWithFormat:@"%@",[self.statusDataList[section]
+                                                                        objectForKey:kStatusCommentsCount]];
+        
         [commentBtn setTitle: commentButtonTitle forState:UIControlStateNormal];
+        [commentBtn setTitle:commentButtonTitle forState:UIControlStateHighlighted];
         [commentBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 20, 0, 50)];
         [commentBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, 15, 0, 20)];
         commentBtn.titleLabel.font = [UIFont systemFontOfSize:fontSize];
-        commentBtn.titleLabel.textColor = [UIColor darkGrayColor];
+        [commentBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+        [commentBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
         [footerView addSubview:commentBtn];
         
-        UIButton *attitudesBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(commentBtn.frame) + 10,2.5,90,30)];
-        [attitudesBtn setImage:[UIImage imageNamed:@"timeline_icon_unlike_os7"] forState:UIControlStateNormal];
-        NSString *attitudesButtonTitle =[NSString stringWithFormat:@"%@",[currrentStatusInfo objectForKey:kStatusAttitudesCount]];
+        UIButton *attitudesBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(commentBtn.frame),2.5,100,30)];
+        [attitudesBtn setImage:[UIImage imageNamed:@"timeline_icon_unlike"] forState:UIControlStateNormal];
+        [attitudesBtn setImage:[UIImage imageNamed:@"timeline_icon_like"] forState:UIControlStateHighlighted];
+        NSString *attitudesButtonTitle =[NSString stringWithFormat:@"%@",[self.statusDataList[section]
+                                                                          objectForKey:kStatusAttitudesCount]];
         [attitudesBtn setTitle: attitudesButtonTitle forState:UIControlStateNormal];
+        [attitudesBtn setTitle:attitudesButtonTitle forState:UIControlStateHighlighted];
         [attitudesBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 20, 0, 50)];
         [attitudesBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, 15, 0, 0)];
         attitudesBtn.titleLabel.font = [UIFont systemFontOfSize:fontSize];
-        attitudesBtn.titleLabel.textColor = [UIColor darkGrayColor];
+        [attitudesBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+        [attitudesBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
         [footerView addSubview:attitudesBtn];
         return footerView;
     }

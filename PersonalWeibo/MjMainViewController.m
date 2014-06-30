@@ -12,6 +12,7 @@
 #import "MjAboutMeViewController.h"
 #import "MjPlazaViewController.h"
 #import "MjMoreViewController.h"
+#import "MjPlazaViewFlowLayout.h"
 
 
 @interface MjMainViewController ()
@@ -39,7 +40,7 @@
     
     MjAboutMeViewController *aboutMeVCtrl = [[MjAboutMeViewController alloc] initWithStyle:UITableViewStyleGrouped];
     
-    MjPlazaViewController *plazaVCtrl = [[MjPlazaViewController alloc] initWithCollectionViewLayout:[[UICollectionViewFlowLayout alloc] init ]];
+    MjPlazaViewController *plazaVCtrl = [[MjPlazaViewController alloc] initWithCollectionViewLayout:[[MjPlazaViewFlowLayout alloc] init ]];
     
     MjMoreViewController *moreVCtrl = [[MjMoreViewController alloc] init];
     

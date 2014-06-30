@@ -35,5 +35,9 @@ static NSString * const kUserInfoScreenName = @"screen_name";
 static NSString * const kUserInfoName = @"name";
 static NSString * const kUserAvatarLarge = @"avatar_large";
 static NSString * const kUserID = @"id";
+static NSString * const kUserAvatarHd = @"avatar_hd";
+static NSString * const kStatuses_count = @"statuses_count";
+static NSString * const kFriends_count = @"friends_count";
+static NSString * const kFollowers_count = @"followers_count";
 
 #endif

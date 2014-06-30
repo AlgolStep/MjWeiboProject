@@ -7,13 +7,17 @@
 //
 
 #import "MjMessageViewController.h"
+#import "MjSmartTableViewCell.h"
+#import "MjMessageCell.h"
 
-@interface MjMessageViewController ()
+@interface MjMessageViewController ()<SinaWeiboRequestDelegate>
 
+@property (nonatomic, retain)NSMutableArray *message;
+@property (nonatomic, retain)NSMutableArray *mImageNames;
+@property (nonatomic, retain)NSArray  *bilTimeLineList;
 @end
 
 @implementation MjMessageViewController
-
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
@@ -26,12 +30,21 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    NSArray *msg = @[@"提到我的",@"评论",@"赞",@"新浪新闻",@"未关注的私信"];
+    self.message = [msg mutableCopy];
     
-    // Uncomment the following line to preserve selection between presentations.
-    // self.clearsSelectionOnViewWillAppear = NO;
+    NSArray *images = @[@"messagescenter_at",@"messagescenter_comments",@"messagescenter_good",@"messagescenter_at",@"messagescenter_at"];
+    self.mImageNames = [images mutableCopy];
     
-    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+}
+
+- (void)requestDataFromSinaServer
+{
+    SinaWeibo *sinaweibo = appDelegate.sinaWeibo;
+    [sinaweibo requestWithURL:@"statuses/bilateral_timeline.json"
+                       params:[NSMutableDictionary dictionaryWithObject:sinaweibo.userID forKey:@"uid"]
+                   httpMethod:@"GET"
+                     delegate:self];
 }
 
 - (void)didReceiveMemoryWarning
@@ -42,84 +55,72 @@
 
 #pragma mark - Table view data source
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
-{
-
-    // Return the number of sections.
-    return 0;
-}
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
 
-    // Return the number of rows in the section.
-    return 0;
+return self.bilTimeLineList.count + self.message.count;
 }
 
-/*
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+- (UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:<#@"reuseIdentifier"#> forIndexPath:indexPath];
-    
-    // Configure the cell...
-    
+    MjSmartTableViewCell *cell = nil;
+    switch (indexPath.row) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        {
+            cell = [MjSmartTableViewCell cellForTableViewWithIdentifer:tableView withCellStyle:UITableViewCellStyleDefault];
+            cell.accessoryType = UITableViewCellAccessoryDetailDisclosureButton;
+            cell.imageView.image = [UIImage imageNamed:self.mImageNames[indexPath.row]];
+            cell.textLabel.text = self.message[indexPath.row];
+        }
+            break;
+        default:
+            cell = [MjMessageCell cellForTableViewWithIdentifer:tableView withCellStyle:UITableViewCellStyleSubtitle];
+            cell.imageView.bounds = CGRectMake(0, 0, 50, 50);
+            cell.accessoryType = UITableViewCellAccessoryNone;
+            if (indexPath.row < self.bilTimeLineList.count) {
+                NSDictionary *userInfo = self.bilTimeLineList[indexPath.row][kStatusUserInfo];
+                NSURL *url = [NSURL URLWithString:userInfo[kUserAvatarLarge]];
+                UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:url]];
+                cell.imageView.image = image;
+                cell.textLabel.text = userInfo[kUserInfoScreenName];
+                cell.detailTextLabel.text = self.bilTimeLineList[indexPath.row][kStatusText];
+            }
+            break;
+    }
+    cell.textLabel.font = [UIFont systemFontOfSize:14.0f];
     return cell;
 }
-*/
 
-/*
-// Override to support conditional editing of the table view.
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    // Return NO if you do not want the specified item to be editable.
-    return YES;
+    return 60;
 }
-*/
 
-/*
-// Override to support editing the table view.
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
+#pragma mark - SinaWeiboRequestDelegate
+
+- (void)request:(SinaWeiboRequest *)request didReceiveResponse:(NSURLResponse *)response
 {
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        // Delete the row from the data source
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-    }   
+    NSLog(@"%s:%@",__func__,response);
 }
-*/
 
-/*
-// Override to support rearranging the table view.
-- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
+- (void)request:(SinaWeiboRequest *)request didReceiveRawData:(NSData *)data
 {
+    NSLog(@"%s",__func__);
 }
-*/
-
-/*
-// Override to support conditional rearranging of the table view.
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
+- (void)request:(SinaWeiboRequest *)request didFailWithError:(NSError *)error
 {
-    // Return NO if you do not want the item to be re-orderable.
-    return YES;
+    NSLog(@"%s:%@",__func__,error);
 }
-*/
 
-/*
-#pragma mark - Table view delegate
-
-// In a xib-based application, navigation from a table can be handled in -tableView:didSelectRowAtIndexPath:
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+- (void)request:(SinaWeiboRequest *)request didFinishLoadingWithResult:(id)result
 {
-    // Navigation logic may go here, for example:
-    // Create the next view controller.
-    <#DetailViewController#> *detailViewController = [[<#DetailViewController#> alloc] initWithNibName:<#@"Nib name"#> bundle:nil];
-    
-    // Pass the selected object to the new view controller.
-    
-    // Push the view controller.
-    [self.navigationController pushViewController:detailViewController animated:YES];
+    self.bilTimeLineList = [result objectForKey:@"statuses"];
+    [self.tableView reloadData];
 }
-*/
 
 @end

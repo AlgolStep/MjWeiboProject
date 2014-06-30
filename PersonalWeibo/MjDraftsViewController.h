@@ -10,4 +10,5 @@
 
 @interface MjDraftsViewController : UITableViewController
 
+@property (nonatomic, retain)NSArray *draftStatus;
 @end

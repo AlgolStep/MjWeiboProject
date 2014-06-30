@@ -24,7 +24,7 @@
 - (void)saveUserInfoToDataBase:(NSDictionary*)dicUserInfo withStatusID:(NSString*)statusID;
 
 
-//将用户信息保存到草稿箱
+//将编辑信息保存到草稿箱
 - (void)saveTempStatusToDrafts:(NSDictionary*)tempStatus;
 
 //从数据库查询微博信息
@@ -32,4 +32,7 @@
 
 //从数据查询用户信息
 - (NSArray*)queryUserInfoFromDataBase;
+
+//从数据库中查询草稿箱的信息
+- (NSArray*)queryTempStatusFromDataBase;
 @end

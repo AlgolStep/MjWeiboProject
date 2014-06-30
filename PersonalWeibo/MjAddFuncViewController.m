@@ -8,6 +8,7 @@
 
 #import "MjAddFuncViewController.h"
 #import "MjDraftsViewController.h"
+#import "MjAboutWBViewController.h"
 
 @interface MjAddFuncViewController ()
 
@@ -72,18 +73,13 @@
             num = 3;
             break;
         case 4:
-            num = 4;
+            num = 5;
             break;
         default:
             break;
     }
     return num;
 }
-
-//- (UIView*)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section
-//{
-//    
-//}
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *cellIndentifier = @"cellIndentifier";
@@ -111,7 +107,25 @@
             [self.navigationController pushViewController:draftsViewController animated:YES];
         }
             break;
-            
+        case 4:
+        {
+            switch (indexPath.row) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    break;
+                case 4:
+                {
+                    MjAboutWBViewController *aboutWBViewController = [[MjAboutWBViewController alloc]init];
+                    [self.navigationController pushViewController:aboutWBViewController animated:YES];
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
         default:
             break;
     }

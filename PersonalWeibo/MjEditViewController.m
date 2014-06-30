@@ -10,6 +10,9 @@
 #import "MjFriendsStatusViewController.h"
 #import "MjEmojiPageView.h"
 #import "SVProgressHUD.h"
+#import "NSString+FrameHeight.h"
+#import "UIImageView+WebCache.h"
+#import "MjWeiBoDataEngine.h"
 
 @interface MjEditViewController ()<EmojiViewDelegate,SinaWeiboRequestDelegate>
 @property (retain, nonatomic) IBOutlet UITextView *textView;
@@ -21,6 +24,9 @@
 @end
 
 @implementation MjEditViewController
+{
+    UIView *retweetBgView;
+}
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
@@ -52,6 +58,7 @@
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:YES];
+    self.tabBarController.tabBar.hidden = YES;
     [self.textView becomeFirstResponder];
     [MjNSDC addObserver:self
                selector:@selector(keyboardWillShow:)
@@ -66,6 +73,7 @@
         [self.sendButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateNormal];
         
     }
+    [self showEditStatusView];
     
 }
 
@@ -75,6 +83,56 @@
     [MjNSDC removeObserver:self name:UIKeyboardWillShowNotification object:nil];
     [MjNSDC removeObserver:self name:UIKeyboardWillHideNotification object:nil];
     
+}
+
+
+- (void)showEditStatusView
+{
+    if (nil != self.mDicStatus) {
+        self.textView.text = [self.mDicStatus objectForKey:kStatusText];
+        
+        CGFloat textViewheight = [self.textView.text initHeightWithFontSize:14.0f forViewWidth:300.0f];
+        retweetBgView= [[UIView alloc]initWithFrame:CGRectMake(0, textViewheight + 10, 300, 80)];
+        retweetBgView.layer.borderColor = [UIColor lightGrayColor].CGColor;
+        retweetBgView.layer.borderWidth = 0.5f;
+        UIImageView *thumbImageView = [[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 80, 80)];
+        [retweetBgView addSubview:thumbImageView];
+        
+        UILabel *retweetUserName = [[UILabel alloc]initWithFrame:CGRectMake(CGRectGetMaxX(thumbImageView.frame) + 10, 10, 200, 20)];
+        [retweetBgView addSubview:retweetUserName];
+        
+        UILabel *retweetStatusText = [[UILabel alloc]initWithFrame:CGRectMake(retweetUserName.frame.origin.x, CGRectGetMaxY(retweetUserName.frame) + 5, 200, 40)];
+        retweetStatusText.numberOfLines = 2;
+        retweetStatusText.textColor = [UIColor lightGrayColor];
+        retweetStatusText.font = [UIFont systemFontOfSize:13.0f];
+        [retweetBgView addSubview:retweetStatusText];
+        
+        NSDictionary *dicRetweetStatus = [self.mDicStatus objectForKey:kStatusRetweetStatus];
+        //      如果被转发的微博包含转发微博，那么当前转发内容需要附带被转发微博的转发微博
+        if (nil != dicRetweetStatus) {
+            // 如果被转发的微博转发的内容有图片，则提取出此图片，如果没有图片，则使用被转发用户的头像作为图片。
+            NSArray *arrayPicUrl = [dicRetweetStatus objectForKey:kStatusPicUrls];
+            if (nil != arrayPicUrl && arrayPicUrl.count > 0) {
+                NSURL *imageUrl = [NSURL URLWithString:[[arrayPicUrl objectAtIndex:0] objectForKey:kStatusThumbnailPic ] ];
+                UIImage *image = [[UIImage alloc]initWithData:[NSData dataWithContentsOfURL:imageUrl]];
+                thumbImageView.image = image;
+            }else{
+                [thumbImageView setImageWithURL:[NSURL URLWithString:[[dicRetweetStatus objectForKey:kStatusUserInfo] objectForKey:kUserAvatarLarge]]];
+            }
+            retweetUserName.text = [[dicRetweetStatus objectForKey:kStatusUserInfo] objectForKey:kUserInfoScreenName];
+            retweetStatusText.text = [dicRetweetStatus objectForKey:kStatusText];
+        }else{
+            if (nil == thumbImageView.image) {
+                [thumbImageView setImageWithURL:[NSURL URLWithString:[[self.mDicStatus objectForKey:kStatusUserInfo] objectForKey:kUserAvatarLarge ]]];
+            }
+            retweetUserName.text = [[self.mDicStatus objectForKey:kStatusUserInfo] objectForKey:kUserInfoScreenName];
+            retweetStatusText.text = [self.mDicStatus objectForKey:kStatusText];
+        }
+        [self.textView addSubview:retweetBgView];
+          MjSafeRelease(thumbImageView);
+          MjSafeRelease(retweetUserName);
+          MjSafeRelease(retweetStatusText);
+    }
 }
 
 //创建键盘上的工具栏
@@ -229,7 +287,7 @@
     UIImageView *wbImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, textViewHeight+20, 80, 100)];
     wbImageView.image = chosenImage;
     [self.textView addSubview:wbImageView];
-    [wbImageView release];
+//    [wbImageView release];
     if (self.postImages == nil) {
         self.postImages = [[NSMutableArray alloc] init];
     }
@@ -333,15 +391,15 @@
         UIImage *image = [self.postImages lastObject];
         [appDelegate.sinaWeibo requestWithURL:@"statuses/upload.json"
                                        params:[NSMutableDictionary dictionaryWithObjectsAndKeys:self.textView.text,@"status",image,@"pic", nil]
-                                   httpMethod:@"GET"
+                                   httpMethod:@"POST"
                                      delegate:self];
     }
     if ([SVProgressHUD isVisible]) {
         
     }else{
-        [SVProgressHUD show];
+        [SVProgressHUD dismissWithSuccess:nil];
     }
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [MjViewControllerManager presentMjController:MjmainViewController];
 }
 #pragma mark -
 #pragma mark UIActionSheetDelegate
@@ -353,7 +411,10 @@
             [self dismissViewControllerAnimated:YES completion:nil];
             break;
         case 1:
+        {
+//            [[MjWeiBoDataEngine shareInstance] saveTempStatusToDrafts:@{@"text": self.textView.text}];
             [self dismissViewControllerAnimated:YES completion:nil];
+        }
             break;
             
         default:

@@ -15,6 +15,9 @@
 #import "NSString+FrameHeight.h"
 #import "MjAboutMeViewController.h"
 #import "MjWeiBoDataEngine.h"
+#import "MjEditViewController.h"
+#import "TSActionSheet.h"
+#import "MjQRCodeViewController.h"
 
 @interface MjHomeViewController ()<MjTableViewCellDelegate>
 @property  (nonatomic, assign)BOOL isTransmited;
@@ -32,7 +35,7 @@
                                  image:[image imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal]
                          selectedImage:[UIImage imageNamed:@"tabbar_home" ]];
         self.statusDataList = [[MjWeiBoDataEngine shareInstance] queryTimeLinesFromDataBase];
-        if (nil == _statusDataList) {
+        if (nil == self.statusDataList) {
             [self onRefreshControl:nil];
         }
     }
@@ -44,11 +47,20 @@
     [super viewDidLoad];
     
 //    [self.tableView registerClass:[MjCostumContentTableViewCell class] forCellReuseIdentifier:@"statusCell"];
+    UIButton *navTitleBtn = [[UIButton alloc]initWithFrame:CGRectMake(110, 5, 100, 20)];
+    [navTitleBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+    [navTitleBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
+    [navTitleBtn setTitle:@"首页" forState:UIControlStateNormal];
+    [navTitleBtn addTarget:self action:@selector(onTitleButton:forEvent:) forControlEvents:UIControlEventTouchUpInside];
+    self.navigationItem.titleView = navTitleBtn;
+    
+    UIBarButtonItem *rightBarButtonItem = [[UIBarButtonItem alloc]initWithImage:[UIImage imageNamed:@"navigationbar_pop"] style:UIBarButtonItemStylePlain target:self action:@selector(onRightItem:forEvent:)];
+    self.navigationItem.rightBarButtonItem = rightBarButtonItem;
+    
     UIRefreshControl *refreshControl = [[UIRefreshControl alloc]init];
     refreshControl.tintColor = [UIColor orangeColor];
     [refreshControl addTarget:self action:@selector(onRefreshControl:) forControlEvents:UIControlEventValueChanged];
     self.refreshControl = refreshControl;
-//    [self onRefreshControl:nil];
     [refreshControl release];
     
 }
@@ -56,7 +68,12 @@
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:YES];
+    self.tabBarController.tabBar.hidden = NO;
 }
+
+#pragma mark -
+#pragma mark method call back
+
 //每次下拉刷新的回调
 - (void)onRefreshControl:(UIRefreshControl *)refreshControl
 {
@@ -70,6 +87,59 @@
     [self requestUserInfoFromSinaServer];
     [self requestTimeLineFromServer];
 }
+
+- (void)onTitleButton:(UIButton**)titleButton forEvent:(UIEvent*)event
+{
+    TSActionSheet *actionSheet = [[TSActionSheet alloc]initWithTitle:@""];
+    actionSheet.cornerRadius = 1.0f;
+    actionSheet.buttonGradient = NO;
+    actionSheet.titleColor = [UIColor whiteColor];
+    CGRect oldFrame = actionSheet.frame;
+    CGRect newFrame = (CGRect){oldFrame.origin,160,oldFrame.size.height};
+    actionSheet.frame = newFrame;
+    [actionSheet addButtonWithTitle:@"时间排序" block:^{
+        NSLog(@"时间排序");
+    }];
+    [actionSheet addButtonWithTitle:@"智能排序" block:^{
+        NSLog(@"智能排序");
+
+    }];
+    [actionSheet addButtonWithTitle:@"我的微博" block:^{
+        NSLog(@"我的微博");
+        
+    }];
+    [actionSheet addButtonWithTitle:@"密友圈" block:^{
+        NSLog(@"密友圈");
+        
+    }];
+    [actionSheet addButtonWithTitle:@"互相关注" block:^{
+        NSLog(@"互相关注");
+        
+    }];
+    [actionSheet showWithTouch:event];
+}
+
+- (void)onRightItem:(UIBarButtonItem*)rightItem forEvent:(UIEvent*)event
+{
+    TSActionSheet *actionSheet = [[TSActionSheet alloc]initWithTitle:@""];
+    actionSheet.cornerRadius = 1.0f;
+    actionSheet.buttonGradient = NO;
+    CGRect oldFrame = actionSheet.frame;
+    CGRect newFrame = (CGRect){oldFrame.origin,80,oldFrame.size.height};
+    actionSheet.frame = newFrame;
+    [actionSheet addButtonWithTitle:@"刷新" block:^{
+        [self onRefreshControl:nil];
+    }];
+    [actionSheet addButtonWithTitle:@"扫一扫" block:^{
+        NSLog(@"扫一扫");
+        MjQRCodeViewController *mjQRCodeViewController = [[MjQRCodeViewController alloc]init];
+        [self presentViewController:mjQRCodeViewController animated:YES completion:nil];
+    }];
+    [actionSheet showWithTouch:event];
+}
+
+#pragma mark -
+#pragma mark requst server
 
 - (void)requestUserInfoFromSinaServer
 {
@@ -138,6 +208,7 @@ CGFloat fontSize = 14.0f;
     NSString *content = [statusInfo objectForKey:@"text"];
     statusTextHeight = [ content initHeightWithFontSize:fontSize forViewWidth:310.f];
     NSDictionary *retweetStatus = [statusInfo objectForKey:@"retweeted_status"];
+  
     //    当retweetStatus为空的时候， 表示当前是一条原创微博
     if (nil == retweetStatus) {
         //      如果这条微博带的有图片，则计算图片的高度
@@ -145,8 +216,9 @@ CGFloat fontSize = 14.0f;
         if (picUrls.count == 1) {
             NSDictionary *dic = picUrls[0];
             NSString *strPicUrls = [dic objectForKey:@"thumbnail_pic"];
-            UIImage *weiboImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:strPicUrls]]];
-            statusImageViewHeight += weiboImage.size.height;
+//            UIImage *weiboImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:strPicUrls]]];
+            CGSize weiboImage = [MjDownJpgImage downloadJpgImage:strPicUrls];
+            statusImageViewHeight += weiboImage.height;
         }else if(picUrls.count > 1)
         {
             int picLineCount = ceilf(picUrls.count / 3.0);
@@ -160,17 +232,16 @@ CGFloat fontSize = 14.0f;
         if (retPicUrls.count == 1) {
             NSDictionary *dic = retPicUrls[0];
             NSString *strPicUrls = [dic objectForKey:@"thumbnail_pic"];
-            UIImage *weiboImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:strPicUrls]]];
-            statusImageViewHeight += weiboImage.size.height;
+//            UIImage *weiboImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:strPicUrls]]];
+            CGSize weiboImage = [MjDownJpgImage downloadJpgImage:strPicUrls];
+            statusImageViewHeight += weiboImage.height;
         }else if(retPicUrls.count > 1)
         {
             int picLineCount = ceilf(retPicUrls.count / 3.0);
             statusImageViewHeight += (80 * picLineCount);
         }
-        
-        
     }
-    return (height4Header + statusTextHeight + statusImageViewHeight + retweetStatusTextHeight + 40);
+    return (height4Header + statusTextHeight + statusImageViewHeight + retweetStatusTextHeight + 50);
 }
 
 
@@ -195,39 +266,49 @@ CGFloat fontSize = 14.0f;
     footerView.layer.borderColor = [UIColor lightGrayColor].CGColor;
     footerView.layer.borderWidth = 0.5f;
     
-    UIButton *retsweetBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, 2.5, 90, 30)];
-    [retsweetBtn setImage:[UIImage imageNamed:@"timeline_icon_retweet_os7"] forState:UIControlStateNormal];
+    UIButton *retsweetBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, 2.5, 100, 30)];
+    [retsweetBtn setImage:[UIImage imageNamed:@"timeline_icon_retweet"] forState:UIControlStateNormal];
+    [retsweetBtn setImage:[UIImage imageNamed:@"timeline_icon_retweet"] forState:UIControlStateHighlighted];
     NSString *retweetButtonTitle =[NSString stringWithFormat:@"%@",[self.statusDataList[section]
                                                                     objectForKey:kStatusRepostsCount]];
     [retsweetBtn setTitle: retweetButtonTitle forState:UIControlStateNormal];
+    [retsweetBtn setTitle:retweetButtonTitle forState:UIControlStateHighlighted];
     [retsweetBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 20, 0, 50)];
     [retsweetBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, 15, 0, 20)];
     retsweetBtn.titleLabel.font = [UIFont systemFontOfSize:13.0f];
-    retsweetBtn.titleLabel.textColor = [UIColor darkGrayColor];
+    [retsweetBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+    [retsweetBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
+    [retsweetBtn addTarget:self action:@selector(onRetsweetBtn:) forControlEvents:UIControlEventTouchUpInside];
     retsweetBtn.tag = section;
     [footerView addSubview:retsweetBtn];
     
-    UIButton *commentBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(retsweetBtn.frame)+10, 2.5, 90, 30)];
-    [commentBtn setImage:[UIImage imageNamed:@"timeline_icon_comment_os7"] forState:UIControlStateNormal];
+    UIButton *commentBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(retsweetBtn.frame)+10, 2.5, 100, 30)];
+    [commentBtn setImage:[UIImage imageNamed:@"timeline_icon_comment"] forState:UIControlStateNormal];
+    [commentBtn setImage:[UIImage imageNamed:@"timeline_icon_comment"] forState:UIControlStateHighlighted];
     NSString *commentButtonTitle =[NSString stringWithFormat:@"%@",[self.statusDataList[section]
                                                                     objectForKey:kStatusCommentsCount]];
     
     [commentBtn setTitle: commentButtonTitle forState:UIControlStateNormal];
+    [commentBtn setTitle:commentButtonTitle forState:UIControlStateHighlighted];
     [commentBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 20, 0, 50)];
     [commentBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, 15, 0, 20)];
     commentBtn.titleLabel.font = [UIFont systemFontOfSize:fontSize];
-    commentBtn.titleLabel.textColor = [UIColor darkGrayColor];
+    [commentBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+    [commentBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
     [footerView addSubview:commentBtn];
     
-    UIButton *attitudesBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(commentBtn.frame) + 10,2.5,90,30)];
-    [attitudesBtn setImage:[UIImage imageNamed:@"timeline_icon_unlike_os7"] forState:UIControlStateNormal];
+    UIButton *attitudesBtn = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX(commentBtn.frame),2.5,100,30)];
+    [attitudesBtn setImage:[UIImage imageNamed:@"timeline_icon_unlike"] forState:UIControlStateNormal];
+    [attitudesBtn setImage:[UIImage imageNamed:@"timeline_icon_like"] forState:UIControlStateHighlighted];
     NSString *attitudesButtonTitle =[NSString stringWithFormat:@"%@",[self.statusDataList[section]
                                                                       objectForKey:kStatusAttitudesCount]];
     [attitudesBtn setTitle: attitudesButtonTitle forState:UIControlStateNormal];
+    [attitudesBtn setTitle:attitudesButtonTitle forState:UIControlStateHighlighted];
     [attitudesBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 20, 0, 50)];
     [attitudesBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, 15, 0, 0)];
     attitudesBtn.titleLabel.font = [UIFont systemFontOfSize:fontSize];
-    attitudesBtn.titleLabel.textColor = [UIColor groupTableViewBackgroundColor];
+    [attitudesBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+    [attitudesBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
     [footerView addSubview:attitudesBtn];
     
     return footerView;
@@ -263,14 +344,13 @@ CGFloat fontSize = 14.0f;
         [SVProgressHUD dismiss];
     }else if([indentifierUrl isEqualToString:@"show.json"]){
         self.currentUserInfo = (NSDictionary *)result;
-        UIButton *navTitleBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        NSString *title = [self.currentUserInfo objectForKey:kUserInfoScreenName];
+        UIButton *navTitleBtn = (UIButton*)self.navigationItem.titleView;
         [navTitleBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
         [navTitleBtn setTitleColor:[UIColor darkGrayColor] forState:UIControlStateHighlighted];
-        NSString *title = [self.currentUserInfo objectForKey:@"screen_name"];
         [navTitleBtn setTitle:title forState:UIControlStateNormal];
         [navTitleBtn setTitle:title forState:UIControlStateHighlighted];
-        self.navigationItem.titleView = navTitleBtn;
-    }
+           }
     if ([self.refreshControl isRefreshing]) {
         [self.refreshControl endRefreshing];
     }else{
@@ -317,6 +397,18 @@ CGFloat fontSize = 14.0f;
     }
 }
 
+#pragma mark -
+#pragma mark Btn call back
+
+- (void)onRetsweetBtn:(UIButton *)sender
+{
+    MjEditViewController *editViewController = [[MjEditViewController alloc]init];
+    editViewController.mDicStatus =self.statusDataList[sender.tag];
+    [self.navigationController pushViewController:editViewController animated:YES];
+    MjSafeRelease(editViewController);
+}
+
+//为了实现点击转发视图中的图片展示出原始的图片
 - (void)showFullViewWith:(NSString*)imageName
 {
     UIWindow *window = [[UIApplication sharedApplication]keyWindow];

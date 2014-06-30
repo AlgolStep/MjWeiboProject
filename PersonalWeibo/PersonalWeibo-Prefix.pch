@@ -18,6 +18,7 @@
     #import "MjAppDelegate.h"
     #import "MjViewControllerManager.h"
     #import "MjPersonalConstDefine.h"
+    #import "MjDownJpgImage.h"
 
 
 #define kAppKey           @"3462153875"
@@ -28,5 +29,6 @@
 #define NSUD [NSUserDefaults standardUserDefaults]
 #define   appDelegate  ((MjAppDelegate*)([UIApplication sharedApplication].delegate))
 #define MjNSDC   [NSNotificationCenter defaultCenter]
+#define   MjSafeRelease(_pointer) {[_pointer release],_pointer = nil;}
 
 #endif

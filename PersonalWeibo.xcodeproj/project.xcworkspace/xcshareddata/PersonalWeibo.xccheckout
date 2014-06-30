@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>BE5EDD34-D9FB-49E5-B106-EF06F9304E83</string>
+	<key>IDESourceControlProjectName</key>
+	<string>PersonalWeibo</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>0546B37B-3A83-4867-869A-745F62F7C9CA</key>
+		<string>https://github.com/AlgolStep/MjWeiboProject</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>PersonalWeibo.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>0546B37B-3A83-4867-869A-745F62F7C9CA</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/AlgolStep/MjWeiboProject</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>0546B37B-3A83-4867-869A-745F62F7C9CA</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>0546B37B-3A83-4867-869A-745F62F7C9CA</string>
+			<key>IDESourceControlWCCName</key>
+			<string>PersonalWeibo</string>
+		</dict>
+	</array>
+</dict>
+</plist>

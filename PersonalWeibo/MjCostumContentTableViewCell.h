@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "MjRichTextView.h"
 
 @class MjCostumContentTableViewCell;
 @protocol MjTableViewCellDelegate <NSObject>
@@ -17,14 +18,14 @@
 
 @end
 
-@interface MjCostumContentTableViewCell : UITableViewCell
+@interface MjCostumContentTableViewCell : UITableViewCell<TQRichTextViewDelegate>
 @property (nonatomic,retain)UIImageView *avatarImageView;
 @property (nonatomic,retain)UILabel *labelScreenName;
 @property (nonatomic,retain)UILabel *labelCreateTime;
 @property (nonatomic,retain)UILabel *labelChannel;
 
 //原创微博内容
-@property (nonatomic,retain)UILabel *labelStatus;
+@property (nonatomic,retain)MjRichTextView *labelStatus;
 
 //原创微博内的图片
 @property (nonatomic,retain)UIView *stImageViewBg;
@@ -37,6 +38,7 @@
 @property (nonatomic,strong)UIView *retStImageViewBg;
 
 @property (nonatomic,retain)NSDictionary *cellData;
+@property (nonatomic, retain)NSDictionary *cellUserData;
 
 //声明一个delegate，属性用assign。如果是ARC环境的话用weak
 @property (nonatomic, assign)id <MjTableViewCellDelegate>delegate;

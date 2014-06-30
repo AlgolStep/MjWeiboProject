@@ -81,6 +81,7 @@
 //将单条微博保存到数据库
 - (void)saveStatusToDataBase:(NSDictionary *)dicStatus
 {
+    if (dicStatus != nil) {
     NSString *tableName = @"T_STATUS";
     NSString *oneSpace = @" ";
     NSMutableString  *sql = [[NSMutableString alloc]initWithString:@"INSERT INTO"];
@@ -108,6 +109,7 @@
         NSLog(@"save stauts data error%@",[self.mDb lastErrorMessage]);
         return;
     }
+    [self saveUserInfoToDataBase:[dicStatus objectForKey:kStatusUserInfo] withStatusID:[dicStatus objectForKey:kStatusID]];
 //    如果当前微博有转发微博的话，需要递归一次，将转发微博的信息也保存在数据库
     NSDictionary *dicRetweetStatus = [dicStatus objectForKey:kStatusRetweetStatus];
     if (dicRetweetStatus != nil) {
@@ -118,10 +120,14 @@
     }
 }
 
+}
+#pragma mark - 将获取到的所有微博信息保存到数据库
 -(void)saveTimeLinesToDataBase:(NSArray *)timeLines
 {
-    for (NSDictionary *statusInfo in timeLines) {
-        [self saveStatusToDataBase:statusInfo];
+    if (timeLines != nil && timeLines.count != 0) {
+        for (NSDictionary *statusInfo in timeLines) {
+            [self saveStatusToDataBase:statusInfo];
+        }
     }
 }
 - (void)saveUserInfoToDataBase:(NSDictionary *)dicUserInfo withStatusID:(NSString *)statusID
@@ -129,13 +135,16 @@
 //    防御性编程，确保传入参数是合法的
     if (dicUserInfo != nil) {
         NSString *sql = @"INSERT INTO T_USER \
-        (id,user_id,screen_name,name,status_id,avatar_large) \
-        VALUES (null,?,?,?,?,?)";
+        (id,user_id,screen_name,name,status_id,avatar_large,statuses_count,friends_count,followers_count) \
+        VALUES (null,?,?,?,?,?,?,?,?)";
         BOOL isOK = [self.mDb executeUpdate:sql,[dicUserInfo objectForKey:kUserID],
                      [dicUserInfo objectForKey:kUserInfoScreenName],
                      [dicUserInfo objectForKey:kUserInfoName],
                      kStatusID,
-                     [dicUserInfo objectForKey:kUserAvatarLarge]];
+                     [dicUserInfo objectForKey:kUserAvatarLarge],
+                     [dicUserInfo objectForKey:kStatuses_count],
+                     [dicUserInfo objectForKey:kFriends_count],
+                     [dicUserInfo objectForKey:kFollowers_count]];
         if (!isOK) {
             NSLog(@"save user info to db failed.ERROR%@",[self.mDb lastErrorMessage]);
             return;
@@ -148,7 +157,7 @@
     NSString *sql = @"SELECT status_id,created_at,text,source, thumbnail_pic,\
     original_pic,user_id,retweeted_status_id, reposts_count,comments_count,attitudes_count\
     FROM t_status \
-    WHERE created_at > ? limit 20";
+    where created_at < ? limit 20";
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc]init];
     [dateFormatter setDateFormat:@"EEE MMM dd HH:mm:ss ZZZ yyyy"];
@@ -161,17 +170,20 @@
             return nil;
         }
         NSDictionary *statusInfo = [self queryStatusFromDataBase:[resultSet objectForColumnIndex:7]];
-//       如果有转发微博的话就要构建
+        //       如果有转发微博的话就要构建
         if (nil != statusInfo) {
             [arrayRet addObject:@{kStatusID: [resultSet objectForColumnIndex:0],
-                        kStatusCreateTime : [resultSet objectForColumnIndex:1],
-                              kStatusText : [resultSet objectForColumnIndex:2],
-                            kStatusSource : [resultSet objectForColumnIndex:3],
-                      kStatusThumbnailPic : [resultSet objectForColumnIndex:4],
-                       kStatusOriginalPic : [resultSet objectForColumnIndex:5],
-                          kStatusUserInfo : userInfo,
-                     kStatusRetweetStatus : statusInfo,
-                                 }];
+                                  kStatusCreateTime : [resultSet objectForColumnIndex:1],
+                                  kStatusText : [resultSet objectForColumnIndex:2],
+                                  kStatusSource : [resultSet objectForColumnIndex:3],
+                                  kStatusThumbnailPic : [resultSet objectForColumnIndex:4],
+                                  kStatusOriginalPic : [resultSet objectForColumnIndex:5],
+                                  kStatusRepostsCount:[resultSet objectForColumnIndex:8],
+                                  kStatusCommentsCount:[resultSet objectForColumnIndex:9],
+                                  kStatusAttitudesCount:[resultSet objectForColumnIndex:10],
+                                  kStatusUserInfo : userInfo,
+                                  kStatusRetweetStatus : statusInfo,
+                                  }];
         }else
         {
             [arrayRet addObject:@{kStatusID: [resultSet objectForColumnIndex:0],
@@ -180,6 +192,9 @@
                                   kStatusSource : [resultSet objectForColumnIndex:3],
                                   kStatusThumbnailPic : [resultSet objectForColumnIndex:4],
                                   kStatusOriginalPic : [resultSet objectForColumnIndex:5],
+                                  kStatusRepostsCount:[resultSet objectForColumnIndex:8],
+                                  kStatusCommentsCount:[resultSet objectForColumnIndex:9],
+                                  kStatusAttitudesCount:[resultSet objectForColumnIndex:10],
                                   kStatusUserInfo : userInfo,
                                   }];
         }
@@ -189,39 +204,85 @@
 
 - (NSDictionary*)queryUserInfoFromDataBase:(NSString*)userID
 {
-    NSString *sql = @"SELECT user_id,screen_name,name,avatar_image FROM t_user WHERE user_id = ?";
+    NSString *sql = @"SELECT user_id,screen_name,name,avatar_large,statuses_count,friends_count,followers_count FROM t_user where user_id = ?";
     FMResultSet *userInfo = [self.mDb executeQuery:sql,userID];
     NSDictionary *decRet = nil;
     while ([userInfo next]) {
         decRet = @{kUserID: [userInfo objectForColumnIndex:0],
                    kUserInfoScreenName:[userInfo objectForColumnIndex:1],
                    kUserInfoName:[userInfo objectForColumnIndex:2],
-                   kUserAvatarLarge:[userInfo objectForColumnIndex:3]};
+                   kUserAvatarLarge:[userInfo objectForColumnIndex:3],
+                   kStatuses_count:[userInfo objectForColumnIndex:4],
+                   kFriends_count:[userInfo objectForColumnIndex:5],
+                   kFollowers_count:[userInfo objectForColumnIndex:6]
+                   };
     }
     return decRet;
 }
 
+
 - (NSDictionary*)queryStatusFromDataBase:(NSString*)statusID
 {
     NSString *sql = @"SELECT created_at,text,source,thumbnail_pic,original_pic\
-    reposts_count,comments_count,attitudes_count FROM t_status WHERE status_id = ?";
+    reposts_count,comments_count,attitudes_count FROM t_status where status_id = ?";
     FMResultSet *statusInfo = [self.mDb executeQuery:sql,statusID];
     NSDictionary *decRet = nil;
     while ([statusInfo next]) {
         decRet = @{kStatusID:statusID,
                    kStatusCreateTime: [statusInfo objectForColumnIndex:0],
-                   kStatusSource:[statusInfo objectForColumnIndex:1],
-                   kStatusThumbnailPic:[statusInfo objectForColumnIndex:2],
-                   kStatusOriginalPic:[statusInfo objectForColumnIndex:3],
-                   kStatusRepostsCount:[statusInfo objectForColumnIndex:4],
-                   kStatusCommentsCount:[statusInfo objectForColumnIndex:5],
-                   kStatusAttitudesCount:[statusInfo objectForColumnIndex:6]};
+                   kStatusText:[statusInfo objectForColumnIndex:1],
+                   kStatusSource:[statusInfo objectForColumnIndex:2],
+                   kStatusThumbnailPic:[statusInfo objectForColumnIndex:3],
+                   kStatusOriginalPic:[statusInfo objectForColumnIndex:4],
+                   kStatusRepostsCount:[statusInfo objectForColumnIndex:5],
+                   kStatusCommentsCount:[statusInfo objectForColumnIndex:6],
+                   kStatusAttitudesCount:[statusInfo objectForColumnIndex:7]};
     }
     return decRet;
 }
 
-//- (NSArray*)queryUserInfoFromDataBase
-//{
-//    
-//}
+
+//往草稿箱的数据表中存放数据
+- (void)saveTempStatusToDrafts:(NSDictionary *)tempStatus
+{
+    NSString *statusText = [tempStatus objectForKey:kStatusText];
+    UIImage *image = [tempStatus objectForKey:@"image"];
+    NSString *sql = nil;
+    if (nil != image) {
+        sql = @"INSERT INTO T_DRAFTS (id,text,image) VALUES(null,?,?)";
+        //       我们将image转换成二进制数据，然后保存到数据库
+        NSData *imageData = UIImagePNGRepresentation(image);
+        BOOL isOK = [self.mDb executeUpdate:sql,imageData];
+        if (!isOK) {
+            NSLog(@"insert into t_drafts error.");
+        }else{
+            sql = @"INSERT INTO t_drafts (id,text) values(null,?)";
+            BOOL iOk = [self.mDb executeUpdate:sql,statusText];
+            if (!iOk) {
+                NSLog(@"insert into t_drafts with status text error");
+            }
+        }
+    }
+}
+
+- (NSArray*)queryTempStatusFromDataBase
+{
+    NSString *sql = @"SELECT text,image from T_DRAFTS";
+    FMResultSet *statusInfo = [self.mDb executeQuery:sql];
+    NSMutableArray *resultArray = [[NSMutableArray alloc]initWithCapacity:20];
+    
+    while ([statusInfo next]) {
+        NSData *imageData = [statusInfo dataForColumnIndex:1];
+        NSDictionary *dicInfo = nil;
+        if (nil != imageData) {
+            dicInfo = @{kStatusText: [statusInfo objectForColumnIndex:0],
+                        @"image":[statusInfo objectForColumnIndex:1]};
+            
+        }else{
+            dicInfo = [statusInfo objectForColumnIndex:0];
+        }
+        [resultArray addObject:dicInfo];
+    }
+    return resultArray;
+}
 @end
